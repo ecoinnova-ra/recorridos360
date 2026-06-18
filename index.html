@@ -297,8 +297,7 @@ const firebaseConfig = {
   appId: "1:495474858723:web:f715b54a5ffa95a34903d6"
 };
 
-const CLOUDINARY_CLOUD_NAME = "dbovy3jm";
-const CLOUDINARY_UPLOAD_PRESET = "recorido360";
+const IMGBB_API_KEY = "d5622a01ad178091002a353d4cc25d03";
 
 let db, auth;
 let currentUser = null;
@@ -536,15 +535,15 @@ async function handleUpload(event) {
   progress.textContent = 'Subiendo imagen…';
   try {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('image', file);
+    formData.append('key', IMGBB_API_KEY);
     
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,{method:'POST',body:formData});
-    if (!res.ok) { const errData = await res.json(); throw new Error('Cloudinary: ' + (errData.error?.message || res.status)); }
+    const res = await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:formData});
+    if (!res.ok) { const errData = await res.json(); throw new Error('ImgBB: ' + (errData.error?.message || res.status)); }
     const data = await res.json();
     await db.collection('tours').doc(currentTourId).collection('scenes').add({
-      imageUrl: data.secure_url,
-      cloudinaryPublicId: data.public_id,
+      imageUrl: data.data.url,
+      imgbbDeleteUrl: data.data.delete_url,
       name: file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '),
       desc:'', concepts:[], order:scenes.length,
       uploadedBy: currentUser.uid,
