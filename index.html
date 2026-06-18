@@ -538,9 +538,9 @@ async function handleUpload(event) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    formData.append('folder', `recorridos360/${currentTourId}`);
+    
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,{method:'POST',body:formData});
-    if (!res.ok) throw new Error('Error al subir imagen');
+    if (!res.ok) { const errData = await res.json(); throw new Error('Cloudinary: ' + (errData.error?.message || res.status)); }
     const data = await res.json();
     await db.collection('tours').doc(currentTourId).collection('scenes').add({
       imageUrl: data.secure_url,
