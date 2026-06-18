@@ -4,138 +4,124 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recorridos 360° — Organización de la Producción</title>
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; background: #f5f5f4; color: #1c1c1b; }
-
-:root {
-  --teal: #1D9E75; --teal-light: #E1F5EE; --teal-mid: #9FE1CB; --teal-dark: #085041;
-  --blue-light: #E6F1FB; --blue: #185FA5; --blue-mid: #B5D4F4;
-  --amber-light: #FAEEDA; --amber: #854F0B; --amber-mid: #FAC775;
-  --purple-light: #EEEDFE; --purple: #3C3489; --purple-mid: #AFA9EC;
-  --gray-light: #F1EFE8; --gray: #5F5E5A; --gray-mid: #D3D1C7;
-  --border: rgba(0,0,0,0.12); --border-strong: rgba(0,0,0,0.22);
-  --radius: 8px; --radius-lg: 12px;
-  --surface: #ffffff; --bg: #f5f5f4;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;font-size:14px;background:#f5f5f4;color:#1c1c1b}
+:root{
+  --teal:#1D9E75;--teal-light:#E1F5EE;--teal-mid:#9FE1CB;--teal-dark:#085041;
+  --blue-light:#E6F1FB;--blue:#185FA5;--blue-mid:#B5D4F4;
+  --amber-light:#FAEEDA;--amber:#854F0B;--amber-mid:#FAC775;
+  --purple-light:#EEEDFE;--purple:#3C3489;--purple-mid:#AFA9EC;
+  --gray-light:#F1EFE8;--gray:#5F5E5A;--gray-mid:#D3D1C7;
+  --border:rgba(0,0,0,0.12);--border-strong:rgba(0,0,0,0.22);
+  --radius:8px;--radius-lg:12px;--surface:#fff;--bg:#f5f5f4
 }
-
-#app { display: flex; flex-direction: column; height: 100vh; }
-#app.hidden { display: none; }
-
-#auth-screen { display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--bg); }
-#auth-screen.hidden { display: none; }
-.auth-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 36px 32px; width: 360px; display: flex; flex-direction: column; gap: 16px; }
-.auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-.auth-logo span { font-size: 17px; font-weight: 500; }
-.auth-subtitle { font-size: 13px; color: var(--gray); }
-
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field label { font-size: 12px; color: var(--gray); }
-.field input { border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; font-family: inherit; background: var(--surface); color: inherit; outline: none; transition: border-color 0.15s; }
-.field input:focus { border-color: var(--teal); }
-
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; cursor: pointer; border: 0.5px solid var(--border-strong); background: transparent; color: inherit; font-family: inherit; transition: background 0.12s; white-space: nowrap; }
-.btn:hover { background: var(--gray-light); }
-.btn-primary { background: var(--teal); border-color: var(--teal); color: white; }
-.btn-primary:hover { background: #17865f; }
-.btn-full { width: 100%; }
-.auth-toggle { font-size: 12px; color: var(--gray); text-align: center; }
-.auth-toggle a { color: var(--teal); text-decoration: none; cursor: pointer; }
-.error-msg { font-size: 12px; color: #A32D2D; background: #FCEBEB; padding: 8px 10px; border-radius: var(--radius); display: none; }
-.error-msg.show { display: block; }
-
-.topbar { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 12px; }
-.topbar-left { display: flex; align-items: center; gap: 12px; }
-.logo-text { font-size: 15px; font-weight: 500; }
-.badge-prod { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--teal-light); color: var(--teal-dark); }
-.topbar-right { display: flex; align-items: center; gap: 10px; }
-.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--teal-mid); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--teal-dark); cursor: pointer; flex-shrink: 0; }
-
-.body-layout { display: flex; flex: 1; overflow: hidden; }
-
-.sidebar { width: 268px; min-width: 268px; background: var(--surface); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-.sidebar-top { padding: 14px 14px 10px; border-bottom: 0.5px solid var(--border); }
-.sidebar-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-.tour-selector { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
-.tour-selector select { flex: 1; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 5px 8px; font-size: 13px; font-family: inherit; background: var(--surface); color: inherit; outline: none; }
-.sidebar-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray); font-weight: 500; }
-
-.upload-zone { border: 1.5px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 16px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: border-color 0.15s, background 0.15s; }
-.upload-zone:hover { border-color: var(--teal); background: var(--teal-light); }
-.upload-zone input { display: none; }
-
-.scene-list { display: flex; flex-direction: column; gap: 6px; }
-.scene-card { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 11px; cursor: pointer; background: var(--surface); transition: border-color 0.12s, background 0.12s; display: flex; flex-direction: column; gap: 4px; }
-.scene-card:hover { border-color: var(--border-strong); background: var(--gray-light); }
-.scene-card.active { border-color: var(--teal); background: var(--teal-light); }
-.scene-card .sc-num { font-size: 10px; color: var(--gray); }
-.scene-card .sc-name { font-size: 13px; font-weight: 500; }
-.scene-card .sc-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.sc-tag { font-size: 10px; padding: 1px 6px; border-radius: 20px; background: var(--blue-light); color: var(--blue); }
-.scene-actions { display: flex; gap: 4px; margin-top: 2px; opacity: 0; transition: opacity 0.12s; }
-.scene-card:hover .scene-actions, .scene-card.active .scene-actions { opacity: 1; }
-.sa-btn { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 0.5px solid var(--border); background: var(--surface); cursor: pointer; color: var(--gray); }
-.sa-btn:hover { border-color: #A32D2D; color: #A32D2D; }
-
-.main-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.viewer-wrap { flex: 1; background: #111; position: relative; min-height: 0; }
-#pannellum-viewer { width: 100%; height: 100%; }
-.viewer-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; gap: 10px; }
-.viewer-nav { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
-.vnav-btn { background: rgba(0,0,0,0.65); border: none; color: white; padding: 7px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: background 0.12s; }
-.vnav-btn:hover { background: rgba(0,0,0,0.85); }
-.vnav-btn:disabled { opacity: 0.35; cursor: default; }
-.dot-bar { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.15s; }
-.dot.active { background: white; }
-.upload-progress { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; display: none; }
-.upload-progress.show { display: block; }
-
-.info-panel { height: 210px; border-top: 0.5px solid var(--border); background: var(--surface); display: flex; overflow: hidden; flex-shrink: 0; }
-.scene-info { flex: 1; padding: 14px 16px; overflow-y: auto; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-.scene-info h3 { font-size: 15px; font-weight: 500; }
-.scene-info p { font-size: 13px; color: var(--gray); line-height: 1.5; }
-.concept-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.chip { font-size: 10px; padding: 2px 7px; border-radius: 20px; border: 0.5px solid; }
-.chip-layout { background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; }
-.chip-flow   { background: var(--amber-light); color: var(--amber); border-color: var(--amber-mid); }
-.chip-ergon  { background: var(--purple-light); color: var(--purple); border-color: var(--purple-mid); }
-.chip-other  { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
-
-.comments-panel { width: 290px; display: flex; flex-direction: column; overflow: hidden; padding: 12px; }
-.comments-header { font-size: 11px; font-weight: 500; color: var(--gray); margin-bottom: 8px; }
-.comments-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
-.comment { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 9px 10px; font-size: 12px; }
-.cm-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-.cm-author { font-weight: 500; font-size: 12px; }
-.cm-time { font-size: 10px; color: var(--gray); }
-.cm-concept { font-size: 10px; color: var(--blue); background: var(--blue-light); padding: 1px 6px; border-radius: 20px; margin-bottom: 4px; display: inline-block; }
-.cm-text { color: var(--gray); line-height: 1.5; }
-.add-comment-form { border-top: 0.5px solid var(--border); padding-top: 8px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.add-comment-form select, .add-comment-form textarea { width: 100%; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 8px; font-size: 12px; font-family: inherit; background: var(--surface); color: inherit; outline: none; transition: border-color 0.12s; }
-.add-comment-form select:focus, .add-comment-form textarea:focus { border-color: var(--teal); }
-.add-comment-form textarea { resize: none; height: 50px; }
-
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal-backdrop.hidden { display: none; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 420px; max-width: 95vw; display: flex; flex-direction: column; gap: 14px; }
-.modal h2 { font-size: 16px; font-weight: 500; }
-.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-
-.cloudinary-note { background: var(--teal-light); border: 0.5px solid var(--teal-mid); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: var(--teal-dark); line-height: 1.6; }
-.cloudinary-note code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 11px; }
+#app{display:flex;flex-direction:column;height:100vh}
+#app.hidden{display:none}
+#auth-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+#auth-screen.hidden{display:none}
+.auth-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:40px 36px;width:380px;display:flex;flex-direction:column;gap:20px;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+.auth-logo{display:flex;align-items:center;gap:10px}
+.auth-logo span{font-size:18px;font-weight:500}
+.auth-title{font-size:15px;font-weight:500;color:#1c1c1b}
+.auth-sub{font-size:13px;color:var(--gray);line-height:1.5}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;border-radius:var(--radius);border:1.5px solid var(--border-strong);background:var(--surface);color:#1c1c1b;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.12s,box-shadow 0.12s;width:100%}
+.btn-google:hover{background:#f8f8f8;box-shadow:0 1px 6px rgba(0,0,0,0.1)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
+.divider{display:flex;align-items:center;gap:10px;color:var(--gray);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:0.5px;background:var(--border)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--gray)}
+.field input{border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:9px 11px;font-size:14px;font-family:inherit;background:var(--surface);color:inherit;outline:none;transition:border-color 0.15s}
+.field input:focus{border-color:var(--teal)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;border:0.5px solid var(--border-strong);background:transparent;color:inherit;font-family:inherit;transition:background 0.12s;white-space:nowrap}
+.btn:hover{background:var(--gray-light)}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:white}
+.btn-primary:hover{background:#17865f}
+.btn-full{width:100%}
+.auth-toggle{font-size:12px;color:var(--gray);text-align:center}
+.auth-toggle a{color:var(--teal);text-decoration:none;cursor:pointer}
+.error-msg{font-size:12px;color:#A32D2D;background:#FCEBEB;padding:8px 10px;border-radius:var(--radius);display:none}
+.error-msg.show{display:block}
+.topbar{background:var(--surface);border-bottom:0.5px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.logo-text{font-size:15px;font-weight:500}
+.badge-prod{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--teal-light);color:var(--teal-dark)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--teal-mid);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--teal-dark);cursor:pointer;flex-shrink:0}
+.user-name{font-size:13px;color:var(--gray);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.body-layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:268px;min-width:268px;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:14px 14px 10px;border-bottom:0.5px solid var(--border)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.tour-selector select{width:100%;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:5px 8px;font-size:13px;font-family:inherit;background:var(--surface);color:inherit;outline:none}
+.sidebar-label{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray);font-weight:500}
+.upload-zone{border:1.5px dashed var(--border-strong);border-radius:var(--radius-lg);padding:16px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color 0.15s,background 0.15s}
+.upload-zone:hover{border-color:var(--teal);background:var(--teal-light)}
+.upload-zone input{display:none}
+.scene-list{display:flex;flex-direction:column;gap:6px}
+.scene-card{border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 11px;cursor:pointer;background:var(--surface);transition:border-color 0.12s,background 0.12s;display:flex;flex-direction:column;gap:4px}
+.scene-card:hover{border-color:var(--border-strong);background:var(--gray-light)}
+.scene-card.active{border-color:var(--teal);background:var(--teal-light)}
+.scene-card .sc-num{font-size:10px;color:var(--gray)}
+.scene-card .sc-name{font-size:13px;font-weight:500}
+.scene-card .sc-tags{display:flex;flex-wrap:wrap;gap:4px}
+.sc-tag{font-size:10px;padding:1px 6px;border-radius:20px;background:var(--blue-light);color:var(--blue)}
+.scene-actions{display:flex;gap:4px;margin-top:2px;opacity:0;transition:opacity 0.12s}
+.scene-card:hover .scene-actions,.scene-card.active .scene-actions{opacity:1}
+.sa-btn{font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--gray)}
+.sa-btn:hover{border-color:#A32D2D;color:#A32D2D}
+.main-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.viewer-wrap{flex:1;background:#111;position:relative;min-height:0}
+#pannellum-viewer{width:100%;height:100%}
+.viewer-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555;gap:10px}
+.viewer-nav{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.vnav-btn{background:rgba(0,0,0,0.65);border:none;color:white;padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background 0.12s}
+.vnav-btn:hover{background:rgba(0,0,0,0.85)}
+.vnav-btn:disabled{opacity:0.35;cursor:default}
+.dot-bar{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.3);transition:background 0.15s}
+.dot.active{background:white}
+.upload-progress{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:white;padding:8px 16px;border-radius:20px;font-size:12px;display:none}
+.upload-progress.show{display:block}
+.info-panel{height:210px;border-top:0.5px solid var(--border);background:var(--surface);display:flex;overflow:hidden;flex-shrink:0}
+.scene-info{flex:1;padding:14px 16px;overflow-y:auto;border-right:0.5px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.scene-info h3{font-size:15px;font-weight:500}
+.scene-info p{font-size:13px;color:var(--gray);line-height:1.5}
+.concept-chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:10px;padding:2px 7px;border-radius:20px;border:0.5px solid}
+.chip-layout{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97}
+.chip-flow{background:var(--amber-light);color:var(--amber);border-color:var(--amber-mid)}
+.chip-ergon{background:var(--purple-light);color:var(--purple);border-color:var(--purple-mid)}
+.chip-other{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid)}
+.comments-panel{width:290px;display:flex;flex-direction:column;overflow:hidden;padding:12px}
+.comments-header{font-size:11px;font-weight:500;color:var(--gray);margin-bottom:8px}
+.comments-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.comment{border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 10px;font-size:12px}
+.cm-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.cm-author{font-weight:500;font-size:12px}
+.cm-time{font-size:10px;color:var(--gray)}
+.cm-concept{font-size:10px;color:var(--blue);background:var(--blue-light);padding:1px 6px;border-radius:20px;margin-bottom:4px;display:inline-block}
+.cm-text{color:var(--gray);line-height:1.5}
+.add-comment-form{border-top:0.5px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.add-comment-form select,.add-comment-form textarea{width:100%;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 8px;font-size:12px;font-family:inherit;background:var(--surface);color:inherit;outline:none;transition:border-color 0.12s}
+.add-comment-form select:focus,.add-comment-form textarea:focus{border-color:var(--teal)}
+.add-comment-form textarea{resize:none;height:50px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-backdrop.hidden{display:none}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:420px;max-width:95vw;display:flex;flex-direction:column;gap:14px}
+.modal h2{font-size:16px;font-weight:500}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="auth-screen" class="hidden">
   <div class="auth-card">
     <div class="auth-logo">
@@ -146,9 +132,28 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
       </svg>
       <span>Recorridos 360°</span>
     </div>
-    <p class="auth-subtitle" id="auth-subtitle">Ingresá con tu cuenta para acceder a los recorridos.</p>
+    <div>
+      <div class="auth-title">Organización de la Producción</div>
+      <div class="auth-sub" style="margin-top:4px">Plataforma para recorridos virtuales de empresas industriales.</div>
+    </div>
+
     <div id="error-msg" class="error-msg"></div>
-    <div class="field" id="name-field" style="display:none">
+
+    <!-- Botón Google -->
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Ingresar con Google
+    </button>
+
+    <div class="divider">o con email</div>
+
+    <!-- Email/pass -->
+    <div id="name-field" class="field" style="display:none">
       <label>Nombre completo</label>
       <input type="text" id="auth-name" placeholder="Tu nombre">
     </div>
@@ -168,6 +173,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
   </div>
 </div>
 
+<!-- APP -->
 <div id="app" class="hidden">
   <div class="topbar">
     <div class="topbar-left">
@@ -175,8 +181,9 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
       <span class="badge-prod">Organización de la Producción</span>
     </div>
     <div class="topbar-right">
+      <span class="user-name" id="user-name"></span>
       <button class="btn btn-primary" onclick="openNewTourModal()">+ Nuevo recorrido</button>
-      <div class="avatar" id="user-avatar" onclick="logout()">??</div>
+      <div class="avatar" id="user-avatar" onclick="logout()" title="Cerrar sesión">??</div>
     </div>
   </div>
 
@@ -193,7 +200,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
       </div>
       <div class="sidebar-scroll">
         <div class="sidebar-label">Agregar escena</div>
-        <label class="upload-zone" id="upload-label">
+        <label class="upload-zone">
           <input type="file" id="img-input" accept="image/*" onchange="handleUpload(event)">
           <span style="font-size:22px;color:var(--teal)">⬆</span>
           <span style="font-size:13px;font-weight:500;">Subir imagen 360°</span>
@@ -216,7 +223,6 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
         <div class="dot-bar" id="dot-bar"></div>
         <div class="viewer-nav" id="viewer-nav" style="display:none">
           <button class="vnav-btn" id="btn-prev" onclick="navScene(-1)">← Anterior</button>
-          <button class="vnav-btn" onclick="toggleMap()">⊞ Mapa</button>
           <button class="vnav-btn" id="btn-next" onclick="navScene(1)">Siguiente →</button>
         </div>
       </div>
@@ -257,18 +263,9 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
 <div class="modal-backdrop hidden" id="new-tour-modal">
   <div class="modal">
     <h2>Nuevo recorrido de empresa</h2>
-    <div class="field">
-      <label>Nombre de la empresa</label>
-      <input type="text" id="new-tour-name" placeholder="Ej: Laminación Paulista S.A.">
-    </div>
-    <div class="field">
-      <label>Rubro / industria</label>
-      <input type="text" id="new-tour-industry" placeholder="Ej: Siderurgia, Alimentos, Textil...">
-    </div>
-    <div class="field">
-      <label>Descripción breve (opcional)</label>
-      <textarea id="new-tour-desc" style="border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;padding:8px;width:100%;font-family:inherit;font-size:13px;resize:none;height:60px;" placeholder="Contexto de la empresa, año de visita..."></textarea>
-    </div>
+    <div class="field"><label>Nombre de la empresa</label><input type="text" id="new-tour-name" placeholder="Ej: Laminación Paulista S.A."></div>
+    <div class="field"><label>Rubro / industria</label><input type="text" id="new-tour-industry" placeholder="Ej: Siderurgia, Alimentos, Textil..."></div>
+    <div class="field"><label>Descripción breve (opcional)</label><textarea id="new-tour-desc" style="border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;padding:8px;width:100%;font-family:inherit;font-size:13px;resize:none;height:60px;" placeholder="Contexto de la empresa, año de visita..."></textarea></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeNewTourModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="createTour()">Crear recorrido</button>
@@ -281,18 +278,9 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
   <div class="modal">
     <h2>Editar escena</h2>
     <input type="hidden" id="edit-scene-id">
-    <div class="field">
-      <label>Nombre de la escena</label>
-      <input type="text" id="edit-scene-name" placeholder="Ej: Línea de producción principal">
-    </div>
-    <div class="field">
-      <label>Descripción</label>
-      <textarea id="edit-scene-desc" style="border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;padding:8px;width:100%;font-family:inherit;font-size:13px;resize:none;height:70px;" placeholder="¿Qué se ve en esta imagen?"></textarea>
-    </div>
-    <div class="field">
-      <label>Conceptos de OP presentes (separados por coma)</label>
-      <input type="text" id="edit-scene-concepts" placeholder="Ej: Distribución en planta, Flujo de materiales">
-    </div>
+    <div class="field"><label>Nombre de la escena</label><input type="text" id="edit-scene-name" placeholder="Ej: Línea de producción principal"></div>
+    <div class="field"><label>Descripción</label><textarea id="edit-scene-desc" style="border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;padding:8px;width:100%;font-family:inherit;font-size:13px;resize:none;height:70px;" placeholder="¿Qué se ve en esta imagen?"></textarea></div>
+    <div class="field"><label>Conceptos de OP (separados por coma)</label><input type="text" id="edit-scene-concepts" placeholder="Ej: Distribución en planta, Flujo de materiales"></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeEditModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSceneEdit()">Guardar</button>
@@ -301,9 +289,6 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; fo
 </div>
 
 <script>
-// ────────────────────────────────────────────
-// 🔧 PASO 1: Pegá acá tu configuración Firebase
-// ────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyBndxe0v185SSXybdinBsMIWU3QXc6ZG-s",
   authDomain: "recorrido360-gi.firebaseapp.com",
@@ -312,17 +297,9 @@ const firebaseConfig = {
   appId: "1:499474858723:web:f715b54a5ffa95a34903d6"
 };
 
-// ────────────────────────────────────────────
-// 🔧 PASO 2: Pegá acá tu Upload Preset de Cloudinary
-// Entrá a cloudinary.com → Settings → Upload → Add upload preset
-// Poné "Signing Mode: Unsigned" y copiá el nombre del preset
-// ────────────────────────────────────────────
 const CLOUDINARY_CLOUD_NAME = "dbovy3jm";
 const CLOUDINARY_UPLOAD_PRESET = "recorido360-GI";
 
-// ────────────────────────────────────────────
-// Estado global
-// ────────────────────────────────────────────
 let db, auth;
 let currentUser = null;
 let currentTourId = null;
@@ -333,32 +310,14 @@ let isLoginMode = true;
 let unsubScenes = null;
 let unsubComments = null;
 
-function initApp() {
-  if (firebaseConfig.apiKey === "TU_API_KEY") {
-    document.body.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f4;font-family:system-ui">
-        <div style="background:white;border-radius:12px;padding:36px;width:480px;border:0.5px solid rgba(0,0,0,0.12)">
-          <div style="font-size:17px;font-weight:500;margin-bottom:12px">Configuración pendiente</div>
-          <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:16px">
-            Necesitás completar dos pasos en el archivo HTML:<br><br>
-            <strong>1. Firebase:</strong> Pegá las credenciales en <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px">firebaseConfig</code><br>
-            <strong>2. Cloudinary:</strong> Pegá tu cloud name y upload preset
-          </p>
-          <p style="font-size:12px;color:#888;">Abrí el archivo HTML con un editor de texto y buscá "PASO 1" y "PASO 2".</p>
-        </div>
-      </div>`;
-    return;
-  }
+firebase.initializeApp(firebaseConfig);
+db   = firebase.firestore();
+auth = firebase.auth();
 
-  firebase.initializeApp(firebaseConfig);
-  db   = firebase.firestore();
-  auth = firebase.auth();
-
-  auth.onAuthStateChanged(user => {
-    if (user) { currentUser = user; showApp(); }
-    else { currentUser = null; showAuth(); }
-  });
-}
+auth.onAuthStateChanged(user => {
+  if (user) { currentUser = user; showApp(); }
+  else { currentUser = null; showAuth(); }
+});
 
 function showAuth() {
   document.getElementById('auth-screen').classList.remove('hidden');
@@ -371,19 +330,27 @@ function showApp() {
   const app = document.getElementById('app');
   app.classList.remove('hidden');
   app.style.display = 'flex';
-  const initials = (currentUser.displayName || currentUser.email || 'U')
-    .split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  const name = currentUser.displayName || currentUser.email || 'Usuario';
+  const initials = name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
   document.getElementById('user-avatar').textContent = initials;
-  document.getElementById('user-avatar').title = `${currentUser.displayName || currentUser.email} · Cerrar sesión`;
+  document.getElementById('user-name').textContent = name;
   loadTourList();
 }
 
-// ── Auth ──
+// ── Auth Google ──
+async function loginGoogle() {
+  clearError();
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch(e) {
+    showError('Error al ingresar con Google: ' + e.message);
+  }
+}
+
+// ── Auth Email ──
 function toggleAuthMode() {
   isLoginMode = !isLoginMode;
-  document.getElementById('auth-subtitle').textContent = isLoginMode
-    ? 'Ingresá con tu cuenta para acceder a los recorridos.'
-    : 'Creá tu cuenta para subir y comentar recorridos.';
   document.getElementById('auth-btn').textContent = isLoginMode ? 'Ingresar' : 'Crear cuenta';
   document.getElementById('toggle-text').textContent = isLoginMode ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?';
   document.getElementById('toggle-link').textContent = isLoginMode ? 'Registrarse' : 'Ingresar';
@@ -407,18 +374,18 @@ async function handleAuth() {
     }
   } catch(e) {
     const msgs = {
-      'auth/user-not-found': 'No existe una cuenta con ese email.',
-      'auth/wrong-password': 'Contraseña incorrecta.',
-      'auth/email-already-in-use': 'Ese email ya está registrado.',
-      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-      'auth/invalid-email': 'Email inválido.',
+      'auth/user-not-found':'No existe una cuenta con ese email.',
+      'auth/wrong-password':'Contraseña incorrecta.',
+      'auth/email-already-in-use':'Ese email ya está registrado.',
+      'auth/weak-password':'La contraseña debe tener al menos 6 caracteres.',
+      'auth/invalid-email':'Email inválido.',
     };
     showError(msgs[e.code] || e.message);
   }
 }
 
 function logout() { if (confirm('¿Cerrar sesión?')) auth.signOut(); }
-function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.classList.add('show'); }
+function showError(msg) { const el=document.getElementById('error-msg'); el.textContent=msg; el.classList.add('show'); }
 function clearError() { document.getElementById('error-msg').classList.remove('show'); }
 
 // ── Tours ──
@@ -430,7 +397,7 @@ async function loadTourList() {
     const d = doc.data();
     const opt = document.createElement('option');
     opt.value = doc.id;
-    opt.textContent = `${d.name}${d.industry ? ' · ' + d.industry : ''}`;
+    opt.textContent = `${d.name}${d.industry ? ' · '+d.industry : ''}`;
     sel.appendChild(opt);
   });
 }
@@ -450,9 +417,7 @@ async function createTour() {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   closeNewTourModal();
-  document.getElementById('new-tour-name').value = '';
-  document.getElementById('new-tour-industry').value = '';
-  document.getElementById('new-tour-desc').value = '';
+  ['new-tour-name','new-tour-industry','new-tour-desc'].forEach(id => document.getElementById(id).value='');
   await loadTourList();
   document.getElementById('tour-select').value = ref.id;
   loadTour(ref.id);
@@ -462,8 +427,8 @@ function loadTour(tourId) {
   currentTourId = tourId;
   scenes = [];
   currentSceneIndex = 0;
-  if (unsubScenes) { unsubScenes(); unsubScenes = null; }
-  if (unsubComments) { unsubComments(); unsubComments = null; }
+  if (unsubScenes) { unsubScenes(); unsubScenes=null; }
+  if (unsubComments) { unsubComments(); unsubComments=null; }
   document.getElementById('scene-list').innerHTML = '';
   document.getElementById('scenes-label').style.display = 'none';
   document.getElementById('viewer-nav').style.display = 'none';
@@ -475,34 +440,32 @@ function loadTour(tourId) {
   db.collection('tours').doc(tourId).get().then(doc => {
     if (doc.exists) {
       const d = doc.data();
-      document.getElementById('tour-meta').textContent =
-        `${d.industry ? d.industry + ' · ' : ''}${d.createdByName || ''}`;
+      document.getElementById('tour-meta').textContent = `${d.industry?d.industry+' · ':''}${d.createdByName||''}`;
     }
   });
 
   unsubScenes = db.collection('tours').doc(tourId)
     .collection('scenes').orderBy('order').onSnapshot(snap => {
-      scenes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      scenes = snap.docs.map(d=>({id:d.id,...d.data()}));
       renderSceneList();
       renderDots();
-      if (scenes.length > 0) selectScene(Math.min(currentSceneIndex, scenes.length - 1));
+      if (scenes.length > 0) selectScene(Math.min(currentSceneIndex, scenes.length-1));
     });
 }
 
-// ── Escenas ──
 function renderSceneList() {
   const list = document.getElementById('scene-list');
   list.innerHTML = '';
   document.getElementById('scenes-label').style.display = scenes.length > 0 ? 'block' : 'none';
-  scenes.forEach((sc, i) => {
+  scenes.forEach((sc,i) => {
     const card = document.createElement('div');
-    card.className = 'scene-card' + (i === currentSceneIndex ? ' active' : '');
+    card.className = 'scene-card'+(i===currentSceneIndex?' active':'');
     card.onclick = () => selectScene(i);
-    const chips = (sc.concepts || []).slice(0,2).map(c => `<span class="sc-tag">${c}</span>`).join('');
+    const chips = (sc.concepts||[]).slice(0,2).map(c=>`<span class="sc-tag">${c}</span>`).join('');
     card.innerHTML = `
       <div class="sc-num">Escena ${i+1}</div>
-      <div class="sc-name">${sc.name || 'Sin nombre'}</div>
-      ${chips ? `<div class="sc-tags">${chips}</div>` : ''}
+      <div class="sc-name">${sc.name||'Sin nombre'}</div>
+      ${chips?`<div class="sc-tags">${chips}</div>`:''}
       <div class="scene-actions">
         <button class="sa-btn" onclick="event.stopPropagation();openEditModal('${sc.id}')">✎ Editar</button>
         <button class="sa-btn" style="color:#A32D2D" onclick="event.stopPropagation();deleteScene('${sc.id}')">✕ Eliminar</button>
@@ -514,198 +477,164 @@ function renderSceneList() {
 function renderDots() {
   const bar = document.getElementById('dot-bar');
   bar.innerHTML = '';
-  scenes.forEach((_, i) => {
+  scenes.forEach((_,i) => {
     const d = document.createElement('div');
-    d.className = 'dot' + (i === currentSceneIndex ? ' active' : '');
+    d.className = 'dot'+(i===currentSceneIndex?' active':'');
     bar.appendChild(d);
   });
 }
 
 function selectScene(i) {
-  if (i < 0 || i >= scenes.length) return;
+  if (i<0||i>=scenes.length) return;
   currentSceneIndex = i;
   const scene = scenes[i];
-  document.querySelectorAll('.scene-card').forEach((c,j) => c.classList.toggle('active', j === i));
-  document.querySelectorAll('.dot').forEach((d,j) => d.classList.toggle('active', j === i));
+  document.querySelectorAll('.scene-card').forEach((c,j)=>c.classList.toggle('active',j===i));
+  document.querySelectorAll('.dot').forEach((d,j)=>d.classList.toggle('active',j===i));
   const nav = document.getElementById('viewer-nav');
-  nav.style.display = scenes.length > 1 ? 'flex' : 'none';
-  document.getElementById('btn-prev').disabled = i === 0;
-  document.getElementById('btn-next').disabled = i === scenes.length - 1;
-  loadPannellum(scene.imageUrl, scene.name || 'Escena ' + (i+1));
+  nav.style.display = scenes.length>1?'flex':'none';
+  document.getElementById('btn-prev').disabled = i===0;
+  document.getElementById('btn-next').disabled = i===scenes.length-1;
+  loadPannellum(scene.imageUrl, scene.name||'Escena '+(i+1));
   renderInfoPanel(scene);
   loadComments(scene.id);
 }
 
-function navScene(dir) { selectScene(currentSceneIndex + dir); }
+function navScene(dir) { selectScene(currentSceneIndex+dir); }
 
 function loadPannellum(url, title) {
   document.getElementById('viewer-empty').style.display = 'none';
-  if (viewer) { viewer.destroy(); viewer = null; }
-  viewer = pannellum.viewer('pannellum-viewer', {
-    type: 'equirectangular',
-    panorama: url,
-    title: title,
-    autoLoad: true,
-    showZoomCtrl: true,
-    showFullscreenCtrl: true,
-    mouseZoom: true,
-    hfov: 110,
+  if (viewer) { viewer.destroy(); viewer=null; }
+  viewer = pannellum.viewer('pannellum-viewer',{
+    type:'equirectangular', panorama:url, title:title,
+    autoLoad:true, showZoomCtrl:true, showFullscreenCtrl:true, mouseZoom:true, hfov:110
   });
 }
 
 function renderInfoPanel(scene) {
-  const conceptColors = { 'Distribución en planta': 'chip-layout', 'Flujo de materiales': 'chip-flow', 'Ergonomía y condiciones de trabajo': 'chip-ergon', default: 'chip-other' };
-  const chips = (scene.concepts || []).map(c => `<span class="chip ${conceptColors[c] || 'chip-other'}">${c}</span>`).join('');
-  document.getElementById('scene-info').innerHTML = `
-    <h3>${scene.name || 'Sin nombre'}</h3>
-    ${scene.desc ? `<p>${scene.desc}</p>` : '<p style="color:#aaa">Sin descripción. Editá la escena para agregar una.</p>'}
-    ${chips ? `<div style="font-size:11px;color:#888;margin-bottom:2px;">Conceptos de OP:</div><div class="concept-chips">${chips}</div>` : ''}`;
+  const conceptColors={'Distribución en planta':'chip-layout','Flujo de materiales':'chip-flow','Ergonomía y condiciones de trabajo':'chip-ergon'};
+  const chips=(scene.concepts||[]).map(c=>`<span class="chip ${conceptColors[c]||'chip-other'}">${c}</span>`).join('');
+  document.getElementById('scene-info').innerHTML=`
+    <h3>${scene.name||'Sin nombre'}</h3>
+    ${scene.desc?`<p>${scene.desc}</p>`:'<p style="color:#aaa">Sin descripción. Editá la escena para agregar una.</p>'}
+    ${chips?`<div style="font-size:11px;color:#888;margin-bottom:2px;">Conceptos de OP:</div><div class="concept-chips">${chips}</div>`:''}`;
 }
 
 function clearInfoPanel() {
-  document.getElementById('scene-info').innerHTML = '<div style="color:#888;font-size:13px;">Seleccioná una escena para ver su descripción y conceptos vinculados.</div>';
-  document.getElementById('comments-list').innerHTML = '<div style="font-size:12px;color:#888;">Seleccioná una escena para ver sus observaciones.</div>';
-  document.getElementById('add-comment-form').style.display = 'none';
+  document.getElementById('scene-info').innerHTML='<div style="color:#888;font-size:13px;">Seleccioná una escena para ver su descripción y conceptos vinculados.</div>';
+  document.getElementById('comments-list').innerHTML='<div style="font-size:12px;color:#888;">Seleccioná una escena para ver sus observaciones.</div>';
+  document.getElementById('add-comment-form').style.display='none';
 }
 
-// ── Upload a Cloudinary ──
+// ── Upload Cloudinary ──
 async function handleUpload(event) {
   if (!currentTourId) { alert('Primero seleccioná o creá un recorrido.'); return; }
-  if (CLOUDINARY_CLOUD_NAME === "TU_CLOUD_NAME") { alert('Configurá Cloudinary en el archivo HTML (PASO 2).'); return; }
-
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 30 * 1024 * 1024) { alert('La imagen supera los 30 MB.'); return; }
-
+  if (file.size > 30*1024*1024) { alert('La imagen supera los 30 MB.'); return; }
   const progress = document.getElementById('upload-progress');
   progress.classList.add('show');
-  progress.textContent = 'Subiendo a Cloudinary…';
-
+  progress.textContent = 'Subiendo imagen…';
   try {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
     formData.append('folder', `recorridos360/${currentTourId}`);
-
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!res.ok) throw new Error('Error al subir imagen a Cloudinary');
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,{method:'POST',body:formData});
+    if (!res.ok) throw new Error('Error al subir imagen');
     const data = await res.json();
-    const url = data.secure_url;
-
     await db.collection('tours').doc(currentTourId).collection('scenes').add({
-      imageUrl: url,
+      imageUrl: data.secure_url,
       cloudinaryPublicId: data.public_id,
-      name: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
-      desc: '',
-      concepts: [],
-      order: scenes.length,
+      name: file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '),
+      desc:'', concepts:[], order:scenes.length,
       uploadedBy: currentUser.uid,
-      uploadedByName: currentUser.displayName || currentUser.email,
+      uploadedByName: currentUser.displayName||currentUser.email,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    progress.textContent = '¡Imagen subida!';
-    setTimeout(() => progress.classList.remove('show'), 2000);
+    progress.textContent='¡Imagen subida!';
+    setTimeout(()=>progress.classList.remove('show'),2000);
   } catch(e) {
-    progress.textContent = 'Error: ' + e.message;
-    setTimeout(() => progress.classList.remove('show'), 4000);
+    progress.textContent='Error: '+e.message;
+    setTimeout(()=>progress.classList.remove('show'),4000);
   }
-  event.target.value = '';
+  event.target.value='';
 }
 
-// ── Editar / eliminar escena ──
+// ── Editar / eliminar ──
 function openEditModal(sceneId) {
-  const scene = scenes.find(s => s.id === sceneId);
-  if (!scene) return;
-  document.getElementById('edit-scene-id').value = sceneId;
-  document.getElementById('edit-scene-name').value = scene.name || '';
-  document.getElementById('edit-scene-desc').value = scene.desc || '';
-  document.getElementById('edit-scene-concepts').value = (scene.concepts || []).join(', ');
+  const scene=scenes.find(s=>s.id===sceneId); if(!scene) return;
+  document.getElementById('edit-scene-id').value=sceneId;
+  document.getElementById('edit-scene-name').value=scene.name||'';
+  document.getElementById('edit-scene-desc').value=scene.desc||'';
+  document.getElementById('edit-scene-concepts').value=(scene.concepts||[]).join(', ');
   document.getElementById('edit-scene-modal').classList.remove('hidden');
 }
-function closeEditModal() { document.getElementById('edit-scene-modal').classList.add('hidden'); }
-
-async function saveSceneEdit() {
-  const id = document.getElementById('edit-scene-id').value;
-  const name = document.getElementById('edit-scene-name').value.trim();
-  const desc = document.getElementById('edit-scene-desc').value.trim();
-  const concepts = document.getElementById('edit-scene-concepts').value.split(',').map(s => s.trim()).filter(Boolean);
-  await db.collection('tours').doc(currentTourId).collection('scenes').doc(id).update({ name, desc, concepts });
+function closeEditModal(){document.getElementById('edit-scene-modal').classList.add('hidden');}
+async function saveSceneEdit(){
+  const id=document.getElementById('edit-scene-id').value;
+  const name=document.getElementById('edit-scene-name').value.trim();
+  const desc=document.getElementById('edit-scene-desc').value.trim();
+  const concepts=document.getElementById('edit-scene-concepts').value.split(',').map(s=>s.trim()).filter(Boolean);
+  await db.collection('tours').doc(currentTourId).collection('scenes').doc(id).update({name,desc,concepts});
   closeEditModal();
 }
-
-async function deleteScene(sceneId) {
-  if (!confirm('¿Eliminar esta escena y sus comentarios?')) return;
-  const comSnap = await db.collection('tours').doc(currentTourId).collection('scenes').doc(sceneId).collection('comments').get();
-  const batch = db.batch();
-  comSnap.forEach(d => batch.delete(d.ref));
+async function deleteScene(sceneId){
+  if(!confirm('¿Eliminar esta escena y sus comentarios?')) return;
+  const comSnap=await db.collection('tours').doc(currentTourId).collection('scenes').doc(sceneId).collection('comments').get();
+  const batch=db.batch();
+  comSnap.forEach(d=>batch.delete(d.ref));
   batch.delete(db.collection('tours').doc(currentTourId).collection('scenes').doc(sceneId));
   await batch.commit();
 }
 
 // ── Comentarios ──
-function loadComments(sceneId) {
-  if (unsubComments) { unsubComments(); unsubComments = null; }
-  document.getElementById('add-comment-form').style.display = 'flex';
-  unsubComments = db.collection('tours').doc(currentTourId)
+function loadComments(sceneId){
+  if(unsubComments){unsubComments();unsubComments=null;}
+  document.getElementById('add-comment-form').style.display='flex';
+  unsubComments=db.collection('tours').doc(currentTourId)
     .collection('scenes').doc(sceneId).collection('comments')
-    .orderBy('createdAt').onSnapshot(snap => {
-      const list = document.getElementById('comments-list');
-      list.innerHTML = '';
-      document.getElementById('comments-header').textContent = `Observaciones (${snap.size})`;
-      if (snap.empty) { list.innerHTML = '<div style="font-size:12px;color:#aaa;">Todavía no hay observaciones.</div>'; return; }
-      snap.forEach(doc => {
-        const d = doc.data();
-        const time = d.createdAt ? relTime(d.createdAt.toDate()) : '';
-        const el = document.createElement('div');
-        el.className = 'comment';
-        el.innerHTML = `
-          <div class="cm-header"><span class="cm-author">${d.authorName || 'Anónimo'}</span><span class="cm-time">${time}</span></div>
-          ${d.concept ? `<span class="cm-concept">${d.concept}</span>` : ''}
+    .orderBy('createdAt').onSnapshot(snap=>{
+      const list=document.getElementById('comments-list');
+      list.innerHTML='';
+      document.getElementById('comments-header').textContent=`Observaciones (${snap.size})`;
+      if(snap.empty){list.innerHTML='<div style="font-size:12px;color:#aaa;">Todavía no hay observaciones.</div>';return;}
+      snap.forEach(doc=>{
+        const d=doc.data();
+        const time=d.createdAt?relTime(d.createdAt.toDate()):'';
+        const el=document.createElement('div');
+        el.className='comment';
+        el.innerHTML=`
+          <div class="cm-header"><span class="cm-author">${d.authorName||'Anónimo'}</span><span class="cm-time">${time}</span></div>
+          ${d.concept?`<span class="cm-concept">${d.concept}</span>`:''}
           <div class="cm-text">${escapeHtml(d.text)}</div>`;
         list.appendChild(el);
       });
     });
 }
 
-async function submitComment() {
-  const text = document.getElementById('comment-text').value.trim();
-  const concept = document.getElementById('concept-select').value;
-  if (!text) { alert('Escribí tu observación.'); return; }
-  const scene = scenes[currentSceneIndex];
-  if (!scene) return;
+async function submitComment(){
+  const text=document.getElementById('comment-text').value.trim();
+  const concept=document.getElementById('concept-select').value;
+  if(!text){alert('Escribí tu observación.');return;}
+  const scene=scenes[currentSceneIndex]; if(!scene) return;
   await db.collection('tours').doc(currentTourId).collection('scenes').doc(scene.id).collection('comments').add({
-    text, concept,
-    authorId: currentUser.uid,
-    authorName: currentUser.displayName || currentUser.email,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    text,concept,
+    authorId:currentUser.uid,
+    authorName:currentUser.displayName||currentUser.email,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
-  document.getElementById('comment-text').value = '';
-  document.getElementById('concept-select').value = '';
+  document.getElementById('comment-text').value='';
+  document.getElementById('concept-select').value='';
 }
 
-function relTime(date) {
-  const diff = (Date.now() - date) / 1000;
-  if (diff < 60) return 'ahora';
-  if (diff < 3600) return `hace ${Math.floor(diff/60)} min`;
-  if (diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+function relTime(date){
+  const diff=(Date.now()-date)/1000;
+  if(diff<60) return 'ahora';
+  if(diff<3600) return `hace ${Math.floor(diff/60)} min`;
+  if(diff<86400) return `hace ${Math.floor(diff/3600)}h`;
   return `hace ${Math.floor(diff/86400)} días`;
 }
-function escapeHtml(text) { return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function toggleMap() { alert('Podés agregar un campo "mapUrl" en el recorrido para mostrar el plano de planta.'); }
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.ctrlKey) {
-    if (document.activeElement === document.getElementById('comment-text')) submitComment();
-    if (['auth-email','auth-pass','auth-name'].includes(document.activeElement.id)) handleAuth();
-  }
-});
-
-initApp();
+function escapeHtml(text){return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
 </html>
